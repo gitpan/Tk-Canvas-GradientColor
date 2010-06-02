@@ -7,12 +7,12 @@ use Carp;
 #==================================================================
 # Author    : Djibril Ousmanou
 # Copyright : 2010
-# Update    : 01/06/2010 15:15:01
+# Update    : 02/06/2010 11:46:00
 # AIM       : Tk::Canvas::GradientColor
 #==================================================================
 
 use vars qw($VERSION);
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 use base qw/Tk::Derived Tk::Canvas/;
 use POSIX qw( ceil);
@@ -52,84 +52,52 @@ sub enabled_gradientcolor {
 
 sub set_gradientcolor {
   my ( $CompositeWidget, %gradient ) = @_;
-  my $ref_gradient;
 
   return if ( $CompositeWidget->{GradientColorCanvas}{activation} == '0' );
 
-  if (%gradient) {
-    $ref_gradient = $CompositeWidget->_TreatParametersBg( \%gradient );
-  }
-  elsif ( $CompositeWidget->{GradientColorCanvas}{gradient} ) {
-    $ref_gradient = $CompositeWidget->_TreatParametersBg( $CompositeWidget->{GradientColorCanvas}{gradient} );
-  }
-  else {
-    $ref_gradient = $CompositeWidget->_TreatParametersBg();
-  }
+  my $ref_gradient = $CompositeWidget->_TreatParametersBg( \%gradient );
+  my $start_color  = $ref_gradient->{-start_color};
+  my $end_color    = $ref_gradient->{-end_color};
+  my $number_color = $ref_gradient->{-number_color} + 1;
+  my $start        = $ref_gradient->{-start};
+  my $end          = $ref_gradient->{-end};
+  my $type         = $ref_gradient->{-type};
 
-  my ( $red1, $green1, $blue1 ) = $CompositeWidget->HextoRGB( $ref_gradient->{-start_color} );
-  my ( $red2, $green2, $blue2 ) = $CompositeWidget->HextoRGB( $ref_gradient->{-end_color} );
+  my ( $red1, $green1, $blue1 ) = $CompositeWidget->hex_to_rgb($start_color);
+  my ( $red2, $green2, $blue2 ) = $CompositeWidget->hex_to_rgb($end_color);
 
-  my $ref_colors = $CompositeWidget->_gradient_colors(
-    $ref_gradient->{-start_color},
-    $ref_gradient->{-end_color},
-    $ref_gradient->{-number_color}
-  );
+  my $ref_colors = $CompositeWidget->_gradient_colors( $start_color, $end_color, $number_color );
 
   $CompositeWidget->delete($tag_color) if ( $CompositeWidget->find( 'withtag', $tag_color ) );
   my @AllTags = $CompositeWidget->find('all');
 
   if ( $ref_gradient->{-type} eq 'linear_horizontal' ) {
-    $CompositeWidget->_linear_horizontal(
-      $ref_colors,
-      $ref_gradient->{-start},
-      $ref_gradient->{-end},
-      $ref_gradient->{-number_color}
-    );
+    $CompositeWidget->_linear_horizontal( $ref_colors, $start, $end, $number_color );
   }
 
   elsif ( $ref_gradient->{-type} eq 'linear_vertical' ) {
-    $CompositeWidget->_linear_vertical(
-      $ref_colors,
-      $ref_gradient->{-start},
-      $ref_gradient->{-end},
-      $ref_gradient->{-number_color}
-    );
+    $CompositeWidget->_linear_vertical( $ref_colors, $start, $end, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'radial' ) {
-    $CompositeWidget->_radial( $ref_colors, $ref_gradient->{-number_color} );
+    $CompositeWidget->_radial( $ref_colors, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'losange' ) {
-    $CompositeWidget->_losange( $ref_colors, $ref_gradient->{-number_color} );
+    $CompositeWidget->_losange( $ref_colors, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'corner_right' ) {
-    $CompositeWidget->_corner_to_right( $ref_colors, $ref_gradient->{-number_color} );
+    $CompositeWidget->_corner_to_right( $ref_colors, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'corner_left' ) {
-    $CompositeWidget->_corner_to_left( $ref_colors, $ref_gradient->{-number_color} );
+    $CompositeWidget->_corner_to_left( $ref_colors, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'mirror_horizontal' ) {
-    $CompositeWidget->_mirror_horizontal(
-      $ref_colors,
-      $ref_gradient->{-start},
-      $ref_gradient->{-end},
-      $ref_gradient->{-number_color}
-    );
+    $CompositeWidget->_mirror_horizontal( $ref_colors, $start, $end, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'mirror_vertical' ) {
-    $CompositeWidget->_mirror_vertical(
-      $ref_colors,
-      $ref_gradient->{-start},
-      $ref_gradient->{-end},
-      $ref_gradient->{-number_color}
-    );
+    $CompositeWidget->_mirror_vertical( $ref_colors, $start, $end, $number_color );
   }
   else {
-    $CompositeWidget->_linear_horizontal(
-      $ref_colors,
-      $ref_gradient->{-start},
-      $ref_gradient->{-end},
-      $ref_gradient->{-number_color}
-    );
+    $CompositeWidget->_linear_horizontal( $ref_colors, $start, $end, $number_color );
   }
 
   foreach (@AllTags) {
@@ -139,13 +107,13 @@ sub set_gradientcolor {
   return 1;
 }
 
-sub RGBtoHex {
+sub rgb_to_hex {
   my ( $CompositeWidget, $Red, $Green, $Blue ) = @_;
   my $HexColor = sprintf( "#%02X%02X%02X", $Red, $Green, $Blue );
   return uc($HexColor);
 }
 
-sub HextoRGB {
+sub hex_to_rgb {
   my ( $CompositeWidget, $HexColor ) = @_;
   $HexColor = uc($HexColor);
   my ( $Red, $Green, $Blue ) = ();
@@ -155,7 +123,7 @@ sub HextoRGB {
     $Blue  = hex( substr( $HexColor, 5, 2 ) );
   }
   else {
-    $CompositeWidget->_error_bg("invalid color : $HexColor, I wait '#RRGGBB' !", 1);
+    $CompositeWidget->_error_bg( "invalid color : $HexColor, I wait '#RRGGBB' !", 1 );
   }
 
   return ( $Red, $Green, $Blue );
@@ -175,19 +143,18 @@ sub _test_start_end_values {
 sub _gradient_colors {
   my ( $CompositeWidget, $color1, $color2, $number_color ) = @_;
 
-  my ( $red1, $green1, $blue1 ) = $CompositeWidget->HextoRGB($color1);
-  my ( $red2, $green2, $blue2 ) = $CompositeWidget->HextoRGB($color2);
+  my ( $red1, $green1, $blue1 ) = $CompositeWidget->hex_to_rgb($color1);
+  my ( $red2, $green2, $blue2 ) = $CompositeWidget->hex_to_rgb($color2);
   my @AllColors;
   for my $number ( 0 .. $number_color - 1 ) {
     my $red   = $red1 +   ( $number / $number_color ) * ( $red2 - $red1 );
     my $green = $green1 + ( $number / $number_color ) * ( $green2 - $green1 );
     my $blue  = $blue1 +  ( $number / $number_color ) * ( $blue2 - $blue1 );
-    push( @AllColors, $CompositeWidget->RGBtoHex( $red, $green, $blue ) );
+    push( @AllColors, $CompositeWidget->rgb_to_hex( $red, $green, $blue ) );
   }
-  push( @AllColors, $CompositeWidget->RGBtoHex( $red2, $green2, $blue2 ) );
+  push( @AllColors, $CompositeWidget->rgb_to_hex( $red2, $green2, $blue2 ) );
 
   return \@AllColors;
-
 }
 
 sub _TreatParametersBg {
@@ -781,7 +748,7 @@ Disabled background gradient color. The canvas widget will have the background c
 =item I<$canvas_bg>->B<enabled_gradientcolor>
 
 Enabled background gradient color. Background gradient color is activated by default. Use this method if 
-I<disabled_gradientcolor> method had been called.
+I<disabled_gradientcolor> method is called.
 
   $canvas_bg->enabled_gradientcolor;  
 
@@ -845,14 +812,16 @@ I<-start>
 
     -start => 50, # Must be >= 0, <= 100 and start < end
 
-Use it for linear_horizontal and linear_vertical type. The first color start at 'start' percent width of canvas. 
+Use it for linear_horizontal and linear_vertical type. The first color starts at 'start' percent width of canvas. 
+The easy way to understand is to test the example in this documentation.
 
 Ex : width canvas = 1000px, start = 50 : the first part of canvas has the background color of start_color  
 and the gradient color start at 500px.
 
 Default : B<0> 
 
-Use it for mirror_horizontal and mirror_vertical type. The first color start at 'start' percent width of canvas. 
+Use it for mirror_horizontal and mirror_vertical type. The first color starts at 'start' percent width of canvas. 
+The easy way to understand is to test the example in this documentation.
 
 Ex : width canvas = 1000px, start = 50 : the background gradient color begins at 50 percent in two directions. 
 
@@ -886,27 +855,27 @@ Default : B<100>
 
 =back
 
-=head2 RGBtoHex
+=head2 rgb_to_hex
 
 =over 4
 
-=item I<$canvas_bg>->B<RGBtoHex>(I<$Red, $Green, $Blue>)
+=item I<$canvas_bg>->B<rgb_to_hex>(I<$Red, $Green, $Blue>)
 
 Return hexa code of rgb color.
 
-  $canvas_bg->RGBtoHex(200, 102, 65);  # return #C86641
+  $canvas_bg->rgb_to_hex(200, 102, 65);  # return #C86641
 
 =back
 
-=head2 HextoRGB
+=head2 hex_to_rgb
 
 =over 4
 
-=item I<$canvas_bg>->B<HextoRGB>(I<string>)
+=item I<$canvas_bg>->B<hex_to_rgb>(I<string>)
 
 Return an array with red, green an blue code rgb color.
 
-  $canvas_bg->HextoRGB('#C86641');  # return 200, 102, 65
+  $canvas_bg->hex_to_rgb('#C86641');  # return 200, 102, 65
 
 =back
 
@@ -963,7 +932,8 @@ An example to test the configuration of the widget:
   my $type = $canvas->BrowseEntry(
     -label   => 'Type gradient color',
     -choices => [
-      qw/ linear_horizontal linear_vertical mirror_horizontal mirror_vertical radial losange corner_right corner_left/],
+      qw/ linear_horizontal linear_vertical mirror_horizontal mirror_vertical radial losange corner_right corner_left/
+    ],
     -state              => 'readonly',
     -disabledbackground => 'yellow',
     -browsecmd          => sub {
@@ -1005,10 +975,9 @@ An example to test the configuration of the widget:
   my $num                = 100;
   my $entry_number_color = $canvas->BrowseEntry(
     -label              => 'Number color',
-    -choices            => [qw/ 2 10 50 100 150 200 250 300 400 500 750 1000 1500 2000 2500/],
+    -choices            => [qw/ 2 3 4 5 10 50 100 150 200 250 300 400 500 750 1000 1500 2000 2500/],
     -state              => 'readonly',
     -disabledbackground => 'yellow',
-    -variable           => \$num,
     -browsecmd          => sub {
       my ( $widget, $selection ) = @_;
       $arg_gradient{-number_color} = $selection;

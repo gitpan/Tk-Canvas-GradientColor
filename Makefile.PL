@@ -8,7 +8,9 @@ WriteMakefile
           'EXE_FILES' => [],
           'VERSION_FROM' => 'lib/Tk/Canvas/GradientColor.pm',
           'PREREQ_PM' => {
-                           'Test::More' => 0
+                           'Test::More' => 0,
+                           'POSIX' => 0,
+                           'Tk' => 800
                          }
         )
 ;
