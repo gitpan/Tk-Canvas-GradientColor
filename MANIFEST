@@ -1,5 +1,6 @@
 Changes
 demo/test.pl
+ignore.txt
 lib/Tk/Canvas/GradientColor.pm
 Makefile.PL
 MANIFEST

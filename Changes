@@ -1,5 +1,8 @@
 Revision history for Tk-Canvas-GradientColor
 
+1.02    07/06/2010 20:00:03
+        Name color can be used too in set_gradientcolor and hex_to_rgb methods.
+
 1.01    02/06/2010 11:53:04
         Methodes name has been changed :
             - RGBtoHex to rgb_to_hex

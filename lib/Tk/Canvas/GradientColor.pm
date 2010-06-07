@@ -7,12 +7,12 @@ use Carp;
 #==================================================================
 # Author    : Djibril Ousmanou
 # Copyright : 2010
-# Update    : 02/06/2010 11:46:00
-# AIM       : Tk::Canvas::GradientColor
+# Update    : 07/06/2010 20:07:26
+# AIM       : Create gradient background color on a button in Canvas widget
 #==================================================================
 
 use vars qw($VERSION);
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 use base qw/Tk::Derived Tk::Canvas/;
 use POSIX qw( ceil);
@@ -115,15 +115,23 @@ sub rgb_to_hex {
 
 sub hex_to_rgb {
   my ( $CompositeWidget, $HexColor ) = @_;
+
   $HexColor = uc($HexColor);
+  $HexColor =~ s{^#([0-9A-Z])([0-9A-Z])([0-9A-Z])$}{#$1$1$2$2$3$3};
+
   my ( $Red, $Green, $Blue ) = ();
-  if ( $HexColor =~ m{^#(?:[0-9A-Z]{2}){3}$}i ) {
+  if ( $HexColor =~ m{^#(?:[0-9A-Z]{2}){3}$} ) {
     $Red   = hex( substr( $HexColor, 1, 2 ) );
     $Green = hex( substr( $HexColor, 3, 2 ) );
     $Blue  = hex( substr( $HexColor, 5, 2 ) );
   }
+  elsif ( $HexColor =~ m{^#} ) {
+    $CompositeWidget->_error_bg( "Invalid color : We need color name or #RRGGBB or #RGB \n", 1 );
+  }
+
+  # Color name (Tk work in 16 bits)
   else {
-    $CompositeWidget->_error_bg( "invalid color : $HexColor, I wait '#RRGGBB' !", 1 );
+    ( $Red, $Green, $Blue ) = map { int( ( $_ / 257 ) + 0.5 ) } $CompositeWidget->rgb($HexColor);
   }
 
   return ( $Red, $Green, $Blue );
@@ -190,7 +198,7 @@ sub _TreatParametersBg {
 
   $CompositeWidget->{GradientColorCanvas}{gradient}{-start_color}
     = defined $start_color ? $start_color : '#8BC2F5';
-  $CompositeWidget->{GradientColorCanvas}{gradient}{-end_color} = defined $end_color ? $end_color : '#FFFFFF';
+  $CompositeWidget->{GradientColorCanvas}{gradient}{-end_color} = defined $end_color ? $end_color : 'white';
   $CompositeWidget->{GradientColorCanvas}{gradient}{-number_color}
     = defined $number_color ? $number_color : '100';
   $CompositeWidget->{GradientColorCanvas}{gradient}{-start} = defined $start ? $start : '0';
@@ -790,9 +798,9 @@ Default : B<linear_horizontal>
 
 I<-start_color>
 
-First color of gradient color. Color must be an hexa code.
+First color of gradient color.
 
-    -start_color => '#CC0033',
+    -start_color => 'red',
 
 Default : B<#8BC2F5>
 
@@ -800,11 +808,11 @@ Default : B<#8BC2F5>
 
 I<-end_color>
 
-Last color of gradient color. Color must be an hexa code.
+Last color of gradient color.
 
-    -end_color => '#D6FFFF',
+    -end_color => '#FFCD9F',
 
-Default : B<#FFFFFF>
+Default : B<white>
 
 =item *
 
@@ -876,6 +884,7 @@ Return hexa code of rgb color.
 Return an array with red, green an blue code rgb color.
 
   $canvas_bg->hex_to_rgb('#C86641');  # return 200, 102, 65
+  $canvas_bg->hex_to_rgb('gray');     # return 190, 190, 190
 
 =back
 
