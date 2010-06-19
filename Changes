@@ -1,5 +1,8 @@
 Revision history for Tk-Canvas-GradientColor
 
+1.04    20/06/2010 00:06:41
+        -highlightthickness sets to 0 by default to remove border focus rectangle.
+
 1.03    19/06/2010 21:59:57
         The bug binding keys fixed.
 
