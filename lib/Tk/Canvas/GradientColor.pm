@@ -7,12 +7,12 @@ use Carp;
 #==================================================================
 # Author    : Djibril Ousmanou
 # Copyright : 2010
-# Update    : 07/06/2010 20:07:26
+# Update    : 19/06/2010 22:23:10
 # AIM       : Create gradient background color on a button in Canvas widget
 #==================================================================
 
 use vars qw($VERSION);
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 use base qw/Tk::Derived Tk::Canvas/;
 use POSIX qw( ceil);
@@ -30,6 +30,10 @@ sub Populate {
   $CompositeWidget->Delegates( DEFAULT => $CompositeWidget );
 
   $CompositeWidget->{GradientColorCanvas}{activation} = 1;
+  foreach my $key ( qw{ Down End Home Left Next Prior Right Up } ) {
+    $CompositeWidget->Tk::bind('Tk::Canvas::GradientColor', "<Key-$key>",         undef);
+    $CompositeWidget->Tk::bind('Tk::Canvas::GradientColor', "<Control-Key-$key>", undef);
+  }
   $CompositeWidget->Tk::bind( '<Configure>' => \&set_gradientcolor );
 }
 
