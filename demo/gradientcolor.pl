@@ -24,8 +24,8 @@ my $canvas = $mw->GradientColor(
 
 my %arg_gradient = (
   -type         => undef,
-  -start_color  => undef,
-  -end_color    => undef,
+  -start_color  => '#A780C1',
+  -end_color    => 'white',
   -start        => undef,
   -end          => undef,
   -number_color => undef,
@@ -54,6 +54,7 @@ my $type = $canvas->BrowseEntry(
   -choices => [
     qw/ linear_horizontal linear_vertical mirror_horizontal mirror_vertical radial losange corner_right corner_left/
   ],
+    -background => 'white',
   -state              => 'readonly',
   -disabledbackground => 'yellow',
   -browsecmd          => sub {
@@ -98,6 +99,7 @@ my $entry_number_color = $canvas->BrowseEntry(
   -choices            => [qw/ 2 3 4 5 10 50 100 150 200 250 300 400 500 750 1000 1500 2000 2500/],
   -state              => 'readonly',
   -disabledbackground => 'yellow',
+  -background => 'white',
   -variable           => \$num,
   -browsecmd          => sub {
     my ( $widget, $selection ) = @_;

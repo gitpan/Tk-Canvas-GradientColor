@@ -4,68 +4,77 @@ use warnings;
 use strict;
 use Carp;
 
-#==================================================================
-# Author    : Djibril Ousmanou
-# Copyright : 2010
-# Update    : 19/06/2010 23:54:29
-# AIM       : Create gradient background color on a button in Canvas widget
-#==================================================================
+#=============================================================================
+# $Author    : Djibril Ousmanou                                              $
+# $Copyright : 2011                                                          $
+# $Update    : 01/01/2011 00:00:00                                           $
+# $AIM       : Create gradient background color on a button in Canvas widget $
+#=============================================================================
 
 use vars qw($VERSION);
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 use base qw/Tk::Derived Tk::Canvas/;
 use POSIX qw( ceil);
 
 Construct Tk::Widget 'GradientColor';
 
-my $tag_color = 'bg_gradient_color_canvas';
+my $COLOR_TAG    = 'bg_gradient_color_canvas';
+my $MIN_START    = 0;
+my $MIDDLE_START = 50;
+my $MAX_START    = 100;
+my $NBR_COLOR    = 100;
+my $PERCENT      = 100;
 
 sub Populate {
-  my ( $CompositeWidget, $RefParameters ) = @_;
+  my ( $cw, $ref_parameters ) = @_;
 
-  $CompositeWidget->SUPER::Populate($RefParameters);
-  $CompositeWidget->Advertise( 'canvas' => $CompositeWidget );
-  $CompositeWidget->Advertise( 'Canvas' => $CompositeWidget );
+  $cw->SUPER::Populate($ref_parameters);
+  $cw->Advertise( 'canvas' => $cw );
+  $cw->Advertise( 'Canvas' => $cw );
 
   # remove highlightthickness if necessary
-  unless ( exists $RefParameters->{-highlightthickness} ) {
-    $CompositeWidget->configure( -highlightthickness => 0 );
+  if ( !exists $ref_parameters->{-highlightthickness} ) {
+    $cw->configure( -highlightthickness => 0 );
   }
 
-  $CompositeWidget->Delegates( DEFAULT => $CompositeWidget );
+  $cw->Delegates( DEFAULT => $cw );
 
-  $CompositeWidget->{GradientColorCanvas}{activation} = 1;
-  foreach my $key ( qw{ Down End Home Left Next Prior Right Up } ) {
-    $CompositeWidget->Tk::bind('Tk::Canvas::GradientColor', "<Key-$key>",         undef);
-    $CompositeWidget->Tk::bind('Tk::Canvas::GradientColor', "<Control-Key-$key>", undef);
+  $cw->{GradientColorCanvas}{activation} = 1;
+  foreach my $key (qw{ Down End Home Left Next Prior Right Up }) {
+    $cw->Tk::bind( 'Tk::Canvas::GradientColor', "<Key-$key>",         undef );
+    $cw->Tk::bind( 'Tk::Canvas::GradientColor', "<Control-Key-$key>", undef );
   }
-  $CompositeWidget->Tk::bind( '<Configure>' => \&set_gradientcolor );
+  $cw->Tk::bind( '<Configure>' => \&set_gradientcolor );
+
+  return;
 }
 
 sub get_gradientcolor {
-  my $CompositeWidget = shift;
-  return $CompositeWidget->{GradientColorCanvas}{gradient};
+  my $cw = shift;
+  return $cw->{GradientColorCanvas}{gradient};
 }
 
 sub disabled_gradientcolor {
-  my $CompositeWidget = shift;
-  $CompositeWidget->{GradientColorCanvas}{activation} = '0';
-  $CompositeWidget->delete($tag_color) if ( $CompositeWidget->find( 'withtag', $tag_color ) );
+  my $cw = shift;
+  $cw->{GradientColorCanvas}{activation} = '0';
+  if ( $cw->find( 'withtag', $COLOR_TAG ) ) { $cw->delete($COLOR_TAG); }
+  return 1;
 }
 
 sub enabled_gradientcolor {
-  my $CompositeWidget = shift;
-  $CompositeWidget->{GradientColorCanvas}{activation} = 1;
-  $CompositeWidget->set_gradientcolor;
+  my $cw = shift;
+  $cw->{GradientColorCanvas}{activation} = 1;
+  $cw->set_gradientcolor;
+  return 1;
 }
 
 sub set_gradientcolor {
-  my ( $CompositeWidget, %gradient ) = @_;
+  my ( $cw, %gradient ) = @_;
 
-  return if ( $CompositeWidget->{GradientColorCanvas}{activation} == '0' );
+  if ( $cw->{GradientColorCanvas}{activation} == 0 ) { return; }
 
-  my $ref_gradient = $CompositeWidget->_TreatParametersBg( \%gradient );
+  my $ref_gradient = $cw->_treat_parameters_bg( \%gradient );
   my $start_color  = $ref_gradient->{-start_color};
   my $end_color    = $ref_gradient->{-end_color};
   my $number_color = $ref_gradient->{-number_color} + 1;
@@ -73,174 +82,168 @@ sub set_gradientcolor {
   my $end          = $ref_gradient->{-end};
   my $type         = $ref_gradient->{-type};
 
-  my ( $red1, $green1, $blue1 ) = $CompositeWidget->hex_to_rgb($start_color);
-  my ( $red2, $green2, $blue2 ) = $CompositeWidget->hex_to_rgb($end_color);
+  my ( $red1, $green1, $blue1 ) = $cw->hex_to_rgb($start_color);
+  my ( $red2, $green2, $blue2 ) = $cw->hex_to_rgb($end_color);
 
-  my $ref_colors = $CompositeWidget->_gradient_colors( $start_color, $end_color, $number_color );
+  my $ref_colors = $cw->_gradient_colors( $start_color, $end_color, $number_color );
 
-  $CompositeWidget->delete($tag_color) if ( $CompositeWidget->find( 'withtag', $tag_color ) );
-  my @AllTags = $CompositeWidget->find('all');
+  if ( $cw->find( 'withtag', $COLOR_TAG ) ) { $cw->delete($COLOR_TAG); }
+  my @alltags = $cw->find('all');
 
   if ( $ref_gradient->{-type} eq 'linear_horizontal' ) {
-    $CompositeWidget->_linear_horizontal( $ref_colors, $start, $end, $number_color );
+    $cw->_linear_horizontal( $ref_colors, $start, $end, $number_color );
   }
-
   elsif ( $ref_gradient->{-type} eq 'linear_vertical' ) {
-    $CompositeWidget->_linear_vertical( $ref_colors, $start, $end, $number_color );
+    $cw->_linear_vertical( $ref_colors, $start, $end, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'radial' ) {
-    $CompositeWidget->_radial( $ref_colors, $number_color );
+    $cw->_radial( $ref_colors, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'losange' ) {
-    $CompositeWidget->_losange( $ref_colors, $number_color );
+    $cw->_losange( $ref_colors, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'corner_right' ) {
-    $CompositeWidget->_corner_to_right( $ref_colors, $number_color );
+    $cw->_corner_to_right( $ref_colors, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'corner_left' ) {
-    $CompositeWidget->_corner_to_left( $ref_colors, $number_color );
+    $cw->_corner_to_left( $ref_colors, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'mirror_horizontal' ) {
-    $CompositeWidget->_mirror_horizontal( $ref_colors, $start, $end, $number_color );
+    $cw->_mirror_horizontal( $ref_colors, $start, $end, $number_color );
   }
   elsif ( $ref_gradient->{-type} eq 'mirror_vertical' ) {
-    $CompositeWidget->_mirror_vertical( $ref_colors, $start, $end, $number_color );
+    $cw->_mirror_vertical( $ref_colors, $start, $end, $number_color );
   }
   else {
-    $CompositeWidget->_linear_horizontal( $ref_colors, $start, $end, $number_color );
+    $cw->_linear_horizontal( $ref_colors, $start, $end, $number_color );
   }
 
-  foreach (@AllTags) {
-    $CompositeWidget->raise( $_, $tag_color );
+  foreach (@alltags) {
+    $cw->raise( $_, $COLOR_TAG );
   }
 
   return 1;
 }
 
 sub rgb_to_hex {
-  my ( $CompositeWidget, $Red, $Green, $Blue ) = @_;
-  my $HexColor = sprintf( "#%02X%02X%02X", $Red, $Green, $Blue );
-  return uc($HexColor);
+  my ( $cw, $red, $green, $blue ) = @_;
+  my $hexcolor = sprintf '#%02X%02X%02X', $red, $green, $blue;
+  return uc $hexcolor;
 }
 
 sub hex_to_rgb {
-  my ( $CompositeWidget, $HexColor ) = @_;
+  my ( $cw, $hexcolor ) = @_;
 
-  $HexColor = uc($HexColor);
-  $HexColor =~ s{^#([0-9A-Z])([0-9A-Z])([0-9A-Z])$}{#$1$1$2$2$3$3};
+  $hexcolor = uc $hexcolor;
+  $hexcolor =~ s{^#([0-9A-Z])([0-9A-Z])([0-9A-Z])$}{#$1$1$2$2$3$3};
 
-  my ( $Red, $Green, $Blue ) = ();
-  if ( $HexColor =~ m{^#(?:[0-9A-Z]{2}){3}$} ) {
-    $Red   = hex( substr( $HexColor, 1, 2 ) );
-    $Green = hex( substr( $HexColor, 3, 2 ) );
-    $Blue  = hex( substr( $HexColor, 5, 2 ) );
+  my ( $red, $green, $blue ) = ();
+  if ( $hexcolor =~ m{^#(?:[0-9A-Z]{2}){3}$} ) {
+    $red   = hex( substr $hexcolor, 1, 2 );
+    $green = hex( substr $hexcolor, 3, 2 );
+    $blue  = hex( substr $hexcolor, 5, 2 );
   }
-  elsif ( $HexColor =~ m{^#} ) {
-    $CompositeWidget->_error_bg( "Invalid color : We need color name or #RRGGBB or #RGB \n", 1 );
+  elsif ( $hexcolor =~ m{^#} ) {
+    $cw->_error_bg( "Invalid color : We need color name or #RRGGBB or #RGB \n", 1 );
   }
 
   # Color name (Tk work in 16 bits)
   else {
-    ( $Red, $Green, $Blue ) = map { int( ( $_ / 257 ) + 0.5 ) } $CompositeWidget->rgb($HexColor);
+    ( $red, $green, $blue ) = map { int( ( $_ / 257 ) + 0.5 ) } $cw->rgb($hexcolor);
   }
 
-  return ( $Red, $Green, $Blue );
+  return ( $red, $green, $blue );
 }
 
 sub _test_start_end_values {
-  my ( $CompositeWidget, $start, $end ) = @_;
-
-  if ( $start < 0 or $end > 100 or $start > $end ) {
-    $CompositeWidget->_error_bg( "Bad start ($start) and end ($end) options\n"
-        . "end value must be > start value and 0 <= start and end value <= 100\n" );
+  my ( $cw, $start, $end ) = @_;
+  if ( $start < $MIN_START or $end > $MAX_START or $start > $end ) {
+    $cw->_error_bg( "Bad start ($start) and end ($end) options\n"
+        . "end value must be > start value and $MIN_START <= start and end value <= $MAX_START\n" );
     return;
   }
   return 1;
 }
 
 sub _gradient_colors {
-  my ( $CompositeWidget, $color1, $color2, $number_color ) = @_;
+  my ( $cw, $color1, $color2, $number_color ) = @_;
 
-  my ( $red1, $green1, $blue1 ) = $CompositeWidget->hex_to_rgb($color1);
-  my ( $red2, $green2, $blue2 ) = $CompositeWidget->hex_to_rgb($color2);
-  my @AllColors;
+  my ( $red1, $green1, $blue1 ) = $cw->hex_to_rgb($color1);
+  my ( $red2, $green2, $blue2 ) = $cw->hex_to_rgb($color2);
+  my @allcolors;
   for my $number ( 0 .. $number_color - 1 ) {
     my $red   = $red1 +   ( $number / $number_color ) * ( $red2 - $red1 );
     my $green = $green1 + ( $number / $number_color ) * ( $green2 - $green1 );
     my $blue  = $blue1 +  ( $number / $number_color ) * ( $blue2 - $blue1 );
-    push( @AllColors, $CompositeWidget->rgb_to_hex( $red, $green, $blue ) );
+    push @allcolors, $cw->rgb_to_hex( $red, $green, $blue );
   }
-  push( @AllColors, $CompositeWidget->rgb_to_hex( $red2, $green2, $blue2 ) );
+  push @allcolors, $cw->rgb_to_hex( $red2, $green2, $blue2 );
 
-  return \@AllColors;
+  return \@allcolors;
 }
 
-sub _TreatParametersBg {
-  my ( $CompositeWidget, $RefGradient ) = @_;
+sub _treat_parameters_bg {
+  my ( $cw, $ref_gradient ) = @_;
 
-  if ( defined $RefGradient and ref($RefGradient) ne 'HASH' ) {
-    $CompositeWidget->_error_bg(
-      "'Can't set -gradient to `$RefGradient', " . "$RefGradient' is not an hash reference\n", 1 );
+  if ( defined $ref_gradient and ref($ref_gradient) ne 'HASH' ) {
+    $cw->_error_bg( "'Can't set -gradient to `$ref_gradient', " . "$ref_gradient' is not an hash reference\n",
+      1 );
   }
-  my $start_color  = $RefGradient->{-start_color};
-  my $end_color    = $RefGradient->{-end_color};
-  my $number_color = $RefGradient->{-number_color};
-  my $start        = $RefGradient->{-start};
-  my $end          = $RefGradient->{-end};
-  my $type         = $RefGradient->{-type};
+  my $start_color  = $ref_gradient->{-start_color};
+  my $end_color    = $ref_gradient->{-end_color};
+  my $number_color = $ref_gradient->{-number_color};
+  my $start        = $ref_gradient->{-start};
+  my $end          = $ref_gradient->{-end};
+  my $type         = $ref_gradient->{-type};
 
-  $start_color
-    = defined $start_color ? $start_color : $CompositeWidget->{GradientColorCanvas}{gradient}{-start_color};
-  $end_color
-    = defined $end_color ? $end_color : $CompositeWidget->{GradientColorCanvas}{gradient}{-end_color};
+  $start_color = defined $start_color ? $start_color : $cw->{GradientColorCanvas}{gradient}{-start_color};
+  $end_color   = defined $end_color   ? $end_color   : $cw->{GradientColorCanvas}{gradient}{-end_color};
   $number_color
     = defined $number_color
     ? $number_color
-    : $CompositeWidget->{GradientColorCanvas}{gradient}{-number_color};
-  $start = defined $start ? $start : $CompositeWidget->{GradientColorCanvas}{gradient}{-start};
-  $end   = defined $end   ? $end   : $CompositeWidget->{GradientColorCanvas}{gradient}{-end};
-  $type  = defined $type  ? $type  : $CompositeWidget->{GradientColorCanvas}{gradient}{-type};
+    : $cw->{GradientColorCanvas}{gradient}{-number_color};
+  $start = defined $start ? $start : $cw->{GradientColorCanvas}{gradient}{-start};
+  $end   = defined $end   ? $end   : $cw->{GradientColorCanvas}{gradient}{-end};
+  $type  = defined $type  ? $type  : $cw->{GradientColorCanvas}{gradient}{-type};
 
-  if ( defined $type and $type =~ m{^mirror_horizontal|mirror_vertical$} ) {
-    unless ( defined $start ) { $start = 50; }
-    unless ( defined $end )   { $end   = 100; }
+  if ( ( defined $type ) and ( $type eq 'mirror_horizontal' or $type eq 'mirror_vertical' ) ) {
+    if ( not defined $start ) { $start = $MIDDLE_START; }
+    if ( not defined $end )   { $end   = $MAX_START; }
   }
 
-  $CompositeWidget->{GradientColorCanvas}{gradient}{-start_color}
-    = defined $start_color ? $start_color : '#8BC2F5';
-  $CompositeWidget->{GradientColorCanvas}{gradient}{-end_color} = defined $end_color ? $end_color : 'white';
-  $CompositeWidget->{GradientColorCanvas}{gradient}{-number_color}
-    = defined $number_color ? $number_color : '100';
-  $CompositeWidget->{GradientColorCanvas}{gradient}{-start} = defined $start ? $start : '0';
-  $CompositeWidget->{GradientColorCanvas}{gradient}{-end}   = defined $end   ? $end   : '100';
-  $CompositeWidget->{GradientColorCanvas}{gradient}{-type}  = defined $type  ? $type  : 'linear_horizontal';
+  $cw->{GradientColorCanvas}{gradient}{-start_color}  = defined $start_color  ? $start_color  : '#8BC2F5';
+  $cw->{GradientColorCanvas}{gradient}{-end_color}    = defined $end_color    ? $end_color    : 'white';
+  $cw->{GradientColorCanvas}{gradient}{-number_color} = defined $number_color ? $number_color : $NBR_COLOR;
+  $cw->{GradientColorCanvas}{gradient}{-start}        = defined $start        ? $start        : $MIN_START;
+  $cw->{GradientColorCanvas}{gradient}{-end}          = defined $end          ? $end          : $MAX_START;
+  $cw->{GradientColorCanvas}{gradient}{-type} = defined $type ? $type : 'linear_horizontal';
 
-  return $CompositeWidget->{GradientColorCanvas}{gradient};
+  return $cw->{GradientColorCanvas}{gradient};
 }
 
 sub _error_bg {
-  my ( $CompositeWidget, $ErrorMessage, $Croak ) = @_;
+  my ( $cw, $error_message, $croak ) = @_;
 
-  if ( defined $Croak and $Croak == 1 ) {
-    croak "[BE CARREFUL] : $ErrorMessage\n";
+  if ( defined $croak and $croak == 1 ) {
+    croak "[BE CARREFUL] : $error_message\n";
   }
   else {
-    warn "[WARNING] : $ErrorMessage\n";
+    carp "[WARNING] : $error_message\n";
   }
 
   return;
 }
 
 sub _linear_horizontal {
-  my ( $CompositeWidget, $ref_colors, $start, $end, $number_color ) = @_;
+  my ( $cw, $ref_colors, $start, $end, $number_color ) = @_;
 
-  return unless ( $CompositeWidget->_test_start_end_values( $start, $end ) );
+  if ( !$cw->_test_start_end_values( $start, $end ) ) { return; }
 
-  $start = $start / 100;
-  $end   = $end / 100;
+  $start = $start / $PERCENT;
+  $end   = $end / $PERCENT;
 
-  my $width  = $CompositeWidget->width;
-  my $height = $CompositeWidget->height;
+  my $width  = $cw->width;
+  my $height = $cw->height;
 
   # Largeur du canvas à dégrader
   my $width_can_grad = ( $width * $end ) - ( $width * $start );
@@ -253,23 +256,23 @@ sub _linear_horizontal {
 
   # start > 0
   if ( $start > 0 ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       0, 0, $x1, $y2,
       -outline => $ref_colors->[0],
       -fill    => $ref_colors->[0],
       -width   => 2,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
   }
 
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $x2, $y2,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
     $x1 = $x2;
     $x2 += $width_rec;
@@ -278,12 +281,12 @@ sub _linear_horizontal {
   # end < 1
   if ( $end < 1 ) {
     $x1 = $end * $width;
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $width, $y2,
       -outline => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -fill    => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
   }
 
@@ -291,15 +294,15 @@ sub _linear_horizontal {
 }
 
 sub _linear_vertical {
-  my ( $CompositeWidget, $ref_colors, $start, $end, $number_color ) = @_;
+  my ( $cw, $ref_colors, $start, $end, $number_color ) = @_;
 
-  return unless ( $CompositeWidget->_test_start_end_values( $start, $end ) );
+  if ( !$cw->_test_start_end_values( $start, $end ) ) { return; }
 
-  $start = $start / 100;
-  $end   = $end / 100;
+  $start = $start / $PERCENT;
+  $end   = $end / $PERCENT;
 
-  my $width  = $CompositeWidget->width;
-  my $height = $CompositeWidget->height;
+  my $width  = $cw->width;
+  my $height = $cw->height;
 
   my $height_can_grad = ( $height * $end ) - ( $height * $start );
   my $height_rec = POSIX::ceil( $height_can_grad / ( $number_color + 1 ) );
@@ -310,23 +313,23 @@ sub _linear_vertical {
 
   # start > 0
   if ( $start > 0 ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, 0, $x2, $y2,
       -outline => $ref_colors->[0],
       -fill    => $ref_colors->[0],
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
   }
 
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $x2, $y2,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
     $y1 = $y2;
     $y2 += $height_rec;
@@ -334,12 +337,12 @@ sub _linear_vertical {
 
   # end < 1
   if ( $end < 1 ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $x2, $height,
       -outline => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -fill    => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
   }
 
@@ -347,15 +350,15 @@ sub _linear_vertical {
 }
 
 sub _mirror_vertical {
-  my ( $CompositeWidget, $ref_colors, $start, $end, $number_color ) = @_;
+  my ( $cw, $ref_colors, $start, $end, $number_color ) = @_;
 
-  return unless ( $CompositeWidget->_test_start_end_values( $start, $end ) );
+  if ( !$cw->_test_start_end_values( $start, $end ) ) { return; }
 
-  $start = $start / 100;
-  $end   = $end / 100;
+  $start = $start / $PERCENT;
+  $end   = $end / $PERCENT;
 
-  my $width  = $CompositeWidget->width;
-  my $height = $CompositeWidget->height;
+  my $width  = $cw->width;
+  my $height = $cw->height;
 
   my $height_can_grad = ( $height * $end ) - ( $height * $start );
   my $height_rec = POSIX::ceil( $height_can_grad / ( $number_color + 1 ) );
@@ -366,12 +369,12 @@ sub _mirror_vertical {
 
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $x2, $y2,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
     $y1 = $y2;
     $y2 += $height_rec;
@@ -379,12 +382,12 @@ sub _mirror_vertical {
 
   # end < 1
   if ( $end < 1 ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $x2, $height,
       -outline => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -fill    => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
   }
 
@@ -399,12 +402,12 @@ sub _mirror_vertical {
 
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $x2, $y2,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
     $y2 = $y1;
     $y1 -= $height_rec;
@@ -415,12 +418,12 @@ sub _mirror_vertical {
     $y1 += $height_rec;
     $y2 += $height_rec;
 
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, 0, $x2, $y2,
       -outline => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -fill    => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
   }
 
@@ -428,15 +431,15 @@ sub _mirror_vertical {
 }
 
 sub _mirror_horizontal {
-  my ( $CompositeWidget, $ref_colors, $start, $end, $number_color ) = @_;
+  my ( $cw, $ref_colors, $start, $end, $number_color ) = @_;
 
-  return unless ( $CompositeWidget->_test_start_end_values( $start, $end ) );
+  if ( !$cw->_test_start_end_values( $start, $end ) ) { return; }
 
-  $start = $start / 100;
-  $end   = $end / 100;
+  $start = $start / $PERCENT;
+  $end   = $end / $PERCENT;
 
-  my $width  = $CompositeWidget->width;
-  my $height = $CompositeWidget->height;
+  my $width  = $cw->width;
+  my $height = $cw->height;
 
   my $width_can_grad = ( $width * $end ) - ( $width * $start );
   my $width_rec = POSIX::ceil( $width_can_grad / ( $number_color + 1 ) );
@@ -449,12 +452,12 @@ sub _mirror_horizontal {
 
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $x2, $y2,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
     $x1 = $x2;
     $x2 += $width_rec;
@@ -462,12 +465,12 @@ sub _mirror_horizontal {
 
   # end < 1
   if ( $end < 1 ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $width, $y2,
       -outline => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -fill    => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
   }
 
@@ -480,12 +483,12 @@ sub _mirror_horizontal {
   $x2 = $start * $width;
   $y2 = $height;
   foreach my $color ( @{$ref_colors} ) {
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       $x1, $y1, $x2, $y2,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
     $x2 = $x1;
     $x1 -= $width_rec;
@@ -494,12 +497,12 @@ sub _mirror_horizontal {
   if ( $other_end > 0 ) {
     $x1 += $width_rec;
     $x2 += $width_rec;
-    $CompositeWidget->createRectangle(
+    $cw->createRectangle(
       0, $y1, $x1, $y2,
       -outline => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -fill    => $ref_colors->[ scalar( @{$ref_colors} - 1 ) ],
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
   }
 
@@ -507,10 +510,10 @@ sub _mirror_horizontal {
 }
 
 sub _corner_to_right {
-  my ( $CompositeWidget, $ref_colors, $number_color ) = @_;
+  my ( $cw, $ref_colors, $number_color ) = @_;
 
-  my $width  = $CompositeWidget->width;
-  my $height = $CompositeWidget->height;
+  my $width  = $cw->width;
+  my $height = $cw->height;
 
   my $xdiff = POSIX::ceil( ( 2 * $width ) /  ( $number_color + 1 ) );
   my $ydiff = POSIX::ceil( ( 2 * $height ) / ( $number_color + 1 ) );
@@ -526,12 +529,12 @@ sub _corner_to_right {
 
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
-    $CompositeWidget->createPolygon(
+    $cw->createPolygon(
       $x1, $y1, $x3, $y3, $x4, $y4, $x2, $y2,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
 
     $x1 = $x2;
@@ -547,10 +550,10 @@ sub _corner_to_right {
 }
 
 sub _corner_to_left {
-  my ( $CompositeWidget, $ref_colors, $number_color ) = @_;
+  my ( $cw, $ref_colors, $number_color ) = @_;
 
-  my $width  = $CompositeWidget->width;
-  my $height = $CompositeWidget->height;
+  my $width  = $cw->width;
+  my $height = $cw->height;
 
   my $xdiff = POSIX::ceil( ( 2 * $width ) /  ( $number_color + 1 ) );
   my $ydiff = POSIX::ceil( ( 2 * $height ) / ( $number_color + 1 ) );
@@ -566,12 +569,12 @@ sub _corner_to_left {
 
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
-    $CompositeWidget->createPolygon(
+    $cw->createPolygon(
       $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
 
     $x1 -= $xdiff;
@@ -586,12 +589,12 @@ sub _corner_to_left {
 }
 
 sub _radial {
-  my ( $CompositeWidget, $ref_colors, $number_color ) = @_;
+  my ( $cw, $ref_colors, $number_color ) = @_;
 
-  my $width  = $CompositeWidget->width;
-  my $height = $CompositeWidget->height;
+  my $width  = $cw->width;
+  my $height = $cw->height;
 
-  $number_color++ if ( $number_color < 2 );
+  if ( $number_color < 2 ) { $number_color++; }
   my $xdiff = POSIX::ceil( ( $width / 2 ) /  ( $number_color + 1 ) );
   my $ydiff = POSIX::ceil( ( $height / 2 ) / ( $number_color + 1 ) );
   my $x1    = 0;
@@ -599,23 +602,23 @@ sub _radial {
   my $x2    = $width;
   my $y2    = $height;
 
-  $CompositeWidget->createRectangle(
+  $cw->createRectangle(
     $x1, $y1, $x2, $y2,
     -outline => $ref_colors->[0],
     -fill    => $ref_colors->[0],
     -width   => 0,
-    -tags    => $tag_color,
+    -tags    => $COLOR_TAG,
   );
 
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
     next if ( $x1 >= $x2 or $y1 >= $y2 );
-    $CompositeWidget->createOval(
+    $cw->createOval(
       $x1, $y1, $x2, $y2,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
     $x1 += $xdiff;
     $y1 += $ydiff;
@@ -627,12 +630,12 @@ sub _radial {
 }
 
 sub _losange {
-  my ( $CompositeWidget, $ref_colors, $number_color ) = @_;
+  my ( $cw, $ref_colors, $number_color ) = @_;
 
-  my $width  = $CompositeWidget->width;
-  my $height = $CompositeWidget->height;
+  my $width  = $cw->width;
+  my $height = $cw->height;
 
-  $number_color++ if ( $number_color < 2 );
+  if ( $number_color < 2 ) { $number_color++; }
   my $xdiff = POSIX::ceil( ( $width / 2 ) /  ( $number_color + 1 ) );
   my $ydiff = POSIX::ceil( ( $height / 2 ) / ( $number_color + 1 ) );
   my $x1    = 0;
@@ -640,12 +643,12 @@ sub _losange {
   my $x2    = $width;
   my $y2    = $height;
 
-  $CompositeWidget->createRectangle(
+  $cw->createRectangle(
     $x1, $y1, $x2, $y2,
     -outline => $ref_colors->[0],
     -fill    => $ref_colors->[0],
     -width   => 0,
-    -tags    => $tag_color,
+    -tags    => $COLOR_TAG,
   );
 
   $x1 = $width / 2;
@@ -660,12 +663,12 @@ sub _losange {
   # gradient color
   foreach my $color ( @{$ref_colors} ) {
     next if ( $y1 >= $y3 );
-    $CompositeWidget->createPolygon(
+    $cw->createPolygon(
       $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4,
       -outline => $color,
       -fill    => $color,
       -width   => 0,
-      -tags    => $tag_color,
+      -tags    => $COLOR_TAG,
     );
     $x2 -= $xdiff;
     $x4 += $xdiff;
@@ -693,7 +696,7 @@ Tk::Canvas::GradientColor - To create a Canvas widget with background gradient c
   use Tk;
   use Tk::Canvas::GradientColor;
   
-  my $mw = new MainWindow(
+  my $mw = MainWindow->new(
     -title      => 'Tk::Canvas::GradientColor',
     -background => 'white',
   );
@@ -877,11 +880,11 @@ Default : B<100>
 
 =over 4
 
-=item I<$canvas_bg>->B<rgb_to_hex>(I<$Red, $Green, $Blue>)
+=item I<$canvas_bg>->B<rgb_to_hex>(I<$red, $green, $blue>)
 
 Return hexa code of rgb color.
 
-  $canvas_bg->rgb_to_hex(200, 102, 65);  # return #C86641
+  my $color = $canvas_bg->rgb_to_hex(200, 102, 65);  # return #C86641
 
 =back
 
@@ -893,8 +896,8 @@ Return hexa code of rgb color.
 
 Return an array with red, green an blue code rgb color.
 
-  $canvas_bg->hex_to_rgb('#C86641');  # return 200, 102, 65
-  $canvas_bg->hex_to_rgb('gray');     # return 190, 190, 190
+  my ( $red, $green, $blue ) = $canvas_bg->hex_to_rgb('#C86641');  # return 200, 102, 65
+  my ( $red, $green, $blue ) = $canvas_bg->hex_to_rgb('gray');     # return 190, 190, 190
 
 =back
 
@@ -923,8 +926,8 @@ An example to test the configuration of the widget:
   
   my %arg_gradient = (
     -type         => undef,
-    -start_color  => undef,
-    -end_color    => undef,
+    -start_color  => '#A780C1',
+    -end_color    => 'white',
     -start        => undef,
     -end          => undef,
     -number_color => undef,
@@ -953,6 +956,7 @@ An example to test the configuration of the widget:
     -choices => [
       qw/ linear_horizontal linear_vertical mirror_horizontal mirror_vertical radial losange corner_right corner_left/
     ],
+      -background => 'white',
     -state              => 'readonly',
     -disabledbackground => 'yellow',
     -browsecmd          => sub {
@@ -997,6 +1001,8 @@ An example to test the configuration of the widget:
     -choices            => [qw/ 2 3 4 5 10 50 100 150 200 250 300 400 500 750 1000 1500 2000 2500/],
     -state              => 'readonly',
     -disabledbackground => 'yellow',
+    -background => 'white',
+    -variable           => \$num,
     -browsecmd          => sub {
       my ( $widget, $selection ) = @_;
       $arg_gradient{-number_color} = $selection;
@@ -1070,9 +1076,12 @@ L<http://search.cpan.org/dist/Tk-Canvas-GradientColor/>
 =back
 
 
+=head1 ACKNOWLEDGEMENTS
+
+
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2010 Djibril Ousmanou, all rights reserved.
+Copyright 2011 Djibril Ousmanou, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
