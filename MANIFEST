@@ -1,9 +1,11 @@
+Build.PL
 Changes
 demo/gradientcolor.pl
 demo/gradientcolor.png
 lib/Tk/Canvas/GradientColor.pm
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
+META.json
 META.yml
 README
 t/00-load.t
